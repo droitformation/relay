@@ -73,16 +73,23 @@ class SendgridService implements SendgridInterface
             return false;
     }
 
-    public function addContact($email)
+    public function addContact($emails)
     {
-        $request_body = [
-            ['email' => $email, 'first_name' => '', 'last_name' => '']
-        ];
+        if(is_array($emails)){
+            $request_body = collect($emails)->map(function ($email, $key) {
+                return ['email' => $email];
+            })->toArray();
+        }
+        else{
+            $request_body = [
+                ['email' => $emails]
+            ];
+        }
 
         $response = $this->sendgrid->client->contactdb()->recipients()->post($request_body);
 
         if($response->statusCode() == 201)
-            return json_decode($response->body());
+            return true;
         else
             throw new \App\Exceptions\SendgridImplementationException($message = $response->body(), $response->statusCode());
 
@@ -103,11 +110,20 @@ class SendgridService implements SendgridInterface
         return base64_encode($contactEmail);
     }
 
-    public function addContactToList($contactID)
+    public function addContactToList($emails)
     {
         $this->hasList();
 
-        $response = $this->sendgrid->client->contactdb()->lists()->_($this->list)->recipients()->_($contactID)->post();
+        if(is_array($emails)){
+            $request_body = collect($emails)->map(function ($email, $key) {
+                return base64_encode($email);
+            })->toArray();
+        }
+        else{
+            $request_body = [base64_encode($emails)];
+        }
+
+        $response = $this->sendgrid->client->contactdb()->lists()->_($this->list)->recipients()->post($request_body);
 
         if($response->statusCode() == 201)
             return true;
@@ -118,6 +134,8 @@ class SendgridService implements SendgridInterface
     public function subscribeEmailToList($email)
     {
         $this->hasList();
+
+        $this->addContact($email);
 
         $response = $this->sendgrid->client->contactdb()->lists()->_($this->list)->recipients()->_(base64_encode($email))->post();
 
@@ -199,8 +217,8 @@ class SendgridService implements SendgridInterface
         }
     }
 
-    public function createCampagne($campagne){
-
+    public function createCampagne($campagne, $categories = ['droit'])
+    {
         $this->hasList();
 
         # Parameters
@@ -208,7 +226,7 @@ class SendgridService implements SendgridInterface
             'title'          => $campagne->titre,
             'subject'        => $campagne->sujet,
             'list_ids'       => [$this->list],
-            'categories'     => ['droit'],
+            'categories'     => $categories,
             'segment_ids'    => [],
             'plain_content'  => 'FirstCampagne',
             'suppression_group_id' => 3927,

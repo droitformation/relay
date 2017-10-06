@@ -21,10 +21,15 @@ Route::get('/test', function () {
     $apiKey = env('SENDGRID_API');
     $sg     = new \SendGrid($apiKey);
 
-    $response = $sg->client->senders()->get();
-    echo $response->statusCode();
-    echo $response->body();
-    print_r($response->headers());
+    $emails = ['cindy.leschaud@gmail.com','cindy.leschaud@unine.ch','info@designpond.ch'];
+
+    $emails = collect($emails)->map(function ($email, $key) {
+        return ['email' => $email];
+    })->toArray();
+
+    echo '<pre>';
+    print_r($emails);
+    echo '</pre>';exit;
 
    /* $from    = new SendGrid\Email("Example User", "test@example.com");
     $subject = "Sending with SendGrid is Fun";
@@ -127,11 +132,11 @@ Route::get('/stats', function () {
     $sg     = new \SendGrid($apiKey);
 
     $query_params = [
-        'end_date' => date('Y-m-d'),
         'aggregated_by' => 'day',
+        'end_date' => '2017-10-05',
+        'start_date' => '2017-10-05',
         'limit' => 1,
         'offset' => 1 ,
-        'start_date' => date('Y-m-d'),
         'categories' => 'droit'
     ];
 
@@ -153,6 +158,7 @@ Route::get('/implementation', function () {
 
     $campagne = new stdClass();
 
+    $campagne->id         = 4523;
     $campagne->titre      = 'My Second Campagne';
     $campagne->sujet      = 'This is the scond draft';
     $campagne->from_email = 'info@droitne.ch';
@@ -163,14 +169,20 @@ Route::get('/implementation', function () {
                 <a href="[unsubscribe]">Click Here to Unsubscribe</a>
             </body></html>';
 
+    $emails = ['cindy.leschaud@gmail.com','cindy.leschaud@unine.ch','info@designpond.ch'];
+   // $result = $sendgrid->addContactToList($emails);
+    $result = $sendgrid->subscribeEmailToList('cindy@designpond.ch');
+
     //$result = $sendgrid->addContactToList(base64_encode('cindy.leschaud@gmail.com'));
-    //$result = $sendgrid->createCampagne($campagne);
+
+
+    //$result = $sendgrid->createCampagne($campagne, $categories = ['campagne_'.$campagne->id]);
 
     //$result = $sendgrid->setHtml($html, 1737540);
     //$result = $sendgrid->getHtml(1737540);
     $toSend = \Carbon\Carbon::now()->addMinutes(2)->timestamp;
 
-    $result = $sendgrid->sendCampagne(1737540,$toSend);
+    //$result = $sendgrid->sendCampagne(1737540,$toSend);
    // $result = $sendgrid->deleteCampagne(1737540);
 
     echo '<pre>';
