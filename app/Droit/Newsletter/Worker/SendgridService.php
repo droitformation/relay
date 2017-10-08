@@ -2,6 +2,7 @@
 
 use App\Droit\Newsletter\Worker\SendgridInterface;
 
+use Illuminate\Http\Request;
 use \SendGrid;
 use \SendGrid\Mail;
 use \SendGrid\Email;
@@ -240,8 +241,8 @@ class SendgridService implements SendgridInterface
         $response = $this->sendgrid->client->campaigns()->post($request_body);
 
         if($response->statusCode() == 201){
-            $data = $response->body();
-            return isset($data['result']);
+           // $data = json_decode($response->body());
+            return json_decode($response->body());
         }
 
         throw new \App\Exceptions\SendgridImplementationException($message = $response->body(), $response->statusCode());
@@ -384,33 +385,47 @@ class SendgridService implements SendgridInterface
     /*
      * Send transactional
      * */
-    public function sendBulk($campagne,$html,$recipients, $test = true)
+    public function sendBulk($campagne,$html,$recipients)
     {
-        $sujet = ($test ? 'TEST | '.$campagne->sujet : $campagne->sujet );
+        $to = [];
 
-        $body = [
-            'FromEmail'   => $campagne->newsletter->from_email,
-            'FromName'    => $campagne->newsletter->from_name,
-            'Subject'     => $sujet,
-            'Text-part'   => strip_tags($html),
-            'Html-part'   => $html,
-            'Mj-CustomID' => $campagne->id,
-            'Recipients'  => $recipients,
+        if(!empty($recipients)){
+            $to = collect($recipients)->map(function ($email, $key) {
+                return ['email' => $email];
+            })->toArray();
+        }
+
+        $request_body = [
+            'from' => [
+                'email' => $campagne->from_email,
+                'name' => $campagne->from_name,
+            ],
+            'subject' => $campagne->sujet,
+            'content' => [
+                [
+                    'type' => 'text/html',
+                    'value' => $html
+                ]
+            ],
+            'personalizations' => [
+                [
+                    'to' => $to
+                ]
+            ]
         ];
-        // CustomID
 
-        $response = $this->sendgrid->post(Resources::$Email, ['body' => $body]);
+        $response = $this->sendgrid->client->mail()->send()->post($request_body);
 
-        if($response->success()){
-            return $response->getData();
+        if($response->statusCode() == 202){
+            return true;
         }
-        else{
-            echo '<h3><br/>Merci de faire une copie d\'écran de ce message d\'erreur et de la transmettre à cindy.leschaud@gmail.com</h3>';
-            var_dump($response->getStatus());
-            var_dump($response->getReasonPhrase());
-            var_dump($response->getData());
-            exit;
-        }
+
+        echo '<h3><br/>Merci de faire une copie d\'écran de ce message d\'erreur et de la transmettre à cindy.leschaud@gmail.com</h3>';
+        var_dump(json_decode($response->body()));
+        var_dump($response->statusCode());
+        var_dump($response->headers());
+        exit;
+
     }
 
     /*

@@ -11,10 +11,84 @@
 |
 */
 
+
 Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('tracking', function () {
+
+    $data = [
+        [
+            "sg_message_id" =>"sendgrid_internal_message_id",
+            "email" => "john.doe@sendgrid.com",
+            "timestamp" => 1337197600,
+            "smtp-id" => "<4FB4041F.6080505@sendgrid.com>",
+            "event" => "processed"
+        ],
+        [
+            "sg_message_id" => "sendgrid_internal_message_id",
+            "email" =>  "john.doe@sendgrid.com",
+            "timestamp" =>  1337966815,
+            "category" =>  "newuser",
+            "event" =>  "click",
+            "url" =>  "https => //sendgrid.com"
+        ],
+        [
+            "sg_message_id" => "sendgrid_internal_message_id",
+            "email" =>  "john.doe@sendgrid.com",
+            "timestamp" =>  1337969592,
+            "smtp-id" =>  "<20120525181309.C1A9B40405B3@Example-Mac.local>",
+            "event" =>  "group_unsubscribe",
+            "asm_group_id" =>  42
+        ]
+    ];
+
+    $html = '<html><head><title>Hey new newsletter</title></head><body><h3>Nice!</h3><p>Fourth Campagne</p>
+                <p>OhYeah!</p>
+                <p><a href="https://google.ch">Un lien</a></p>
+            </body></html>';
+
+
+
+    $request_body = [
+        'from' => [
+            'email' => 'info@droitne.ch',
+            'name' => 'Droitne'
+        ],
+        'subject' => 'Un tests',
+        'content' => [
+            [
+                'type' => 'text/html',
+                'value' => $html
+            ]
+        ],
+        'personalizations' => [
+            [
+                'to' => [
+                   ['email' => 'cindy.leschaud@gmail.com']
+                ]
+            ]
+        ]
+    ];
+
+
+/*    echo '<pre>';
+    print_r(json_encode($request_body));
+    echo '</pre>';exit;*/
+
+    $apiKey = env('SENDGRID_API');
+    $sg     = new \SendGrid($apiKey);
+
+    $response = $sg->client->mail()->send()->post($request_body);
+
+    echo '<pre>';
+    echo $response->statusCode();
+    echo $response->body();
+    print_r($response->headers());
+    echo '</pre>';
+
+});
 
 Route::get('/test', function () {
 
@@ -133,11 +207,11 @@ Route::get('/stats', function () {
 
     $query_params = [
         'aggregated_by' => 'day',
-        'end_date' => '2017-10-05',
-        'start_date' => '2017-10-05',
+        'end_date' => '2017-10-06',
+        'start_date' => '2017-10-06',
         'limit' => 1,
         'offset' => 1 ,
-        'categories' => 'droit'
+        'categories' => 'campagne_4523'
     ];
 
     $response = $sg->client->categories()->stats()->get(null, $query_params);
@@ -158,32 +232,34 @@ Route::get('/implementation', function () {
 
     $campagne = new stdClass();
 
-    $campagne->id         = 4523;
-    $campagne->titre      = 'My Second Campagne';
-    $campagne->sujet      = 'This is the scond draft';
+    $campagne->id         = 2345;
+    $campagne->titre      = 'My Fourth Campagne';
+    $campagne->sujet      = 'This is the foruth draft';
     $campagne->from_email = 'info@droitne.ch';
     $campagne->from_name  = 'DroitNe';
 
     //$result = $sendgrid->getCampagne(1736467);
-    $html = '<html><head><title>Hey new newsletter updatef</title></head><body><h3>Nice!</h3><p>FirstCampagne</p><p>OhYeah!</p>
+    $html = '<html><head><title>Hey new newsletter</title></head><body><h3>Nice!</h3><p>Fourth Campagne</p>
+                <p>OhYeah!</p>
+                <p><a href="https://google.ch">Un lien</a></p>
                 <a href="[unsubscribe]">Click Here to Unsubscribe</a>
             </body></html>';
 
     $emails = ['cindy.leschaud@gmail.com','cindy.leschaud@unine.ch','info@designpond.ch'];
    // $result = $sendgrid->addContactToList($emails);
-    $result = $sendgrid->subscribeEmailToList('cindy@designpond.ch');
+    //$result = $sendgrid->subscribeEmailToList('cindy@designpond.ch');
 
     //$result = $sendgrid->addContactToList(base64_encode('cindy.leschaud@gmail.com'));
 
-
     //$result = $sendgrid->createCampagne($campagne, $categories = ['campagne_'.$campagne->id]);
+    $result = $sendgrid->sendBulk($campagne,$html,$emails);
 
-    //$result = $sendgrid->setHtml($html, 1737540);
-    //$result = $sendgrid->getHtml(1737540);
-    $toSend = \Carbon\Carbon::now()->addMinutes(2)->timestamp;
+    //$result = $sendgrid->setHtml($html, 1742529);
+    //$result = $sendgrid->getHtml(1742529);
+    $toSend = \Carbon\Carbon::now()->addMinutes(5)->timestamp;
 
-    //$result = $sendgrid->sendCampagne(1737540,$toSend);
-   // $result = $sendgrid->deleteCampagne(1737540);
+    //$result = $sendgrid->sendCampagne(1742529,$toSend);
+   // $result = $sendgrid->deleteCampagne(1742529);
 
     echo '<pre>';
     print_r($result);
