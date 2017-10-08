@@ -207,11 +207,11 @@ Route::get('/stats', function () {
 
     $query_params = [
         'aggregated_by' => 'day',
-        'end_date' => '2017-10-06',
-        'start_date' => '2017-10-06',
+        'end_date' => '2017-10-08',
+        'start_date' => '2017-10-08',
         'limit' => 1,
         'offset' => 1 ,
-        'categories' => 'campagne_4523'
+        'categories' => 'droit'
     ];
 
     $response = $sg->client->categories()->stats()->get(null, $query_params);
