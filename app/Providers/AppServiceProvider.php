@@ -24,7 +24,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-       $this->registerSendgridNewService();
+        $this->app->bind('mailgun.client', function() {
+            return \Http\Adapter\Guzzle6\Client::createWithConfig(['verify' => false]);
+        });
+
+        $this->registerSendgridNewService();
+        $this->registerMailgunNewService();
     }
 
     /**
@@ -36,6 +41,16 @@ class AppServiceProvider extends ServiceProvider
         {
             return new \App\Droit\Newsletter\Worker\SendgridService(
                 new \SendGrid(env('SENDGRID_API'))
+            );
+        });
+    }
+
+    protected function registerMailgunNewService(){
+
+        $this->app->bind('App\Droit\Newsletter\Worker\MailgunInterface', function()
+        {
+            return new \App\Droit\Newsletter\Worker\MailgunService(
+                new \Mailgun\Mailgun('key-12354e9b024519a3be5b2f050615c5e1')
             );
         });
     }

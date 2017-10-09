@@ -77,49 +77,41 @@ Route::get('tracking', function () {
     print_r(json_encode($request_body));
     echo '</pre>';exit;*/
 
-    $apiKey = env('SENDGRID_API');
-    $sg     = new \SendGrid($apiKey);
-
-    $response = $sg->client->mail()->send()->post($request_body);
-
-    echo '<pre>';
-    echo $response->statusCode();
-    echo $response->body();
-    print_r($response->headers());
-    echo '</pre>';
 
 });
 
 Route::get('/test', function () {
 
-    $apiKey = env('SENDGRID_API');
-    $sg     = new \SendGrid($apiKey);
+    $mailgun = \App::make('App\Droit\Newsletter\Worker\MailgunInterface');
+    // $mailgun->addList('send@mg.droitne.ch','DroitNe','First list');
+    // $response = $mailgun->getAllLists();
+    // $mailgun->setList('send@mg.droitne.ch');
+    // $response = $mailgun->subscribeEmailToList('cindy.leschaud@gmail.com');
+    // $response = $mailgun->removeContact('cindy.leschaud@gmail.com');
+    // $response = $mailgun->getListRecipient('cindy.leschaud@gmail.com');
 
-    $emails = ['cindy.leschaud@gmail.com','cindy.leschaud@unine.ch','info@designpond.ch'];
+    $html = '<html><head><title>Hey new newsletter</title></head><body><h3>Nice!</h3><p>Oh Yeah!</p><p><a href="https://google.ch">Un lien</a></p></body></html>';
 
-    $emails = collect($emails)->map(function ($email, $key) {
-        return ['email' => $email];
-    })->toArray();
+    $newsletter =  new stdClass();
+    $newsletter->from_email = 'info@droitne.ch';
+    $newsletter->from_name = 'DroitNe';
+
+    $campagne = new stdClass();
+    $campagne->id         = 1982;
+    $campagne->titre      = 'My Campagne';
+    $campagne->sujet      = 'This is the draft';
+    $campagne->newsletter = $newsletter;
+
+    $toSend = \Carbon\Carbon::now()->addMinutes(2)->toDateTimeString();
+
+    $mailgun->setHtml($html);
+    $mailgun->setRecipients(['cindy.leschaud@gmail.com','info@leschaud.ch']);
+
+    $response = $mailgun->sendBulk($campagne,$toSend);
 
     echo '<pre>';
-    print_r($emails);
-    echo '</pre>';exit;
-
-   /* $from    = new SendGrid\Email("Example User", "test@example.com");
-    $subject = "Sending with SendGrid is Fun";
-
-    $to      = new SendGrid\Email("Example User", "test@example.com");
-    $content = new SendGrid\Content("text/plain", "and easy to do anywhere, even with PHP");
-
-    $mail    = new SendGrid\Mail($from, $subject, $to, $content);
-    $apiKey = env('SENDGRID_API');
-    $sg     = new \SendGrid($apiKey);
-
-    $response = $sg->client->mail()->send()->post($mail);
-
-    echo $response->statusCode();
-    print_r($response->headers());
-    echo $response->body();*/
+    print_r($response);
+    echo '</pre>';
 
 });
 
