@@ -22,7 +22,7 @@ return [
      * Mailgun (private) API key
      *
      */
-    'api_key' => 'key-12354e9b024519a3be5b2f050615c5e1',
+    'api_key' => config('MAILGUN_KEY'),
 
     /*
      * Mailgun public API key
